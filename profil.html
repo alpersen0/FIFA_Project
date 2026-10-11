@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilim | FIFA 2v2</title>
+    <link rel="stylesheet" href="/fifa_project/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        .swal2-container { z-index: 99999 !important; }
+
+        .profile-container {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 40px 20px; width: 100%; max-width: 400px; margin: 0 auto;
+            box-sizing: border-box; 
+        }
+
+        /* Avatar Tasarımı */
+        .avatar-wrapper {
+            position: relative; width: 120px; height: 120px; border-radius: 50%;
+            background: #1e1e2e; border: 3px solid #00ff88; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+            transition: all 0.3s;
+        }
+        .avatar-wrapper:hover { transform: scale(1.05); }
+        .avatar-preview { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-placeholder { font-size: 3em; }
+        .avatar-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s; color: #fff; font-size: 0.9em; font-weight: bold;
+        }
+        /* 🔥 YENİ: Sürükle-Bırak Aktifken Çıkan Parlama Efekti */
+        .avatar-wrapper.drag-active {
+            transform: scale(1.1);
+            border-color: #fff;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+        }
+        .avatar-wrapper.drag-active .avatar-overlay {
+            opacity: 1;
+            background: rgba(0, 255, 136, 0.3);
+            font-size: 1.1em;
+        }
+        .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+        #avatarInput { display: none; }
+
+        .btn-remove-photo {
+            background: none; border: none; color: #ff4444; font-size: 0.85em;
+            cursor: pointer; display: none; transition: all 0.2s;
+            margin-top: -10px; font-weight: bold; letter-spacing: 0.5px;
+        }
+        .btn-remove-photo:hover { color: #ffaaaa; text-decoration: underline; }
+
+        /* Form Elemanları */
+        .input-group { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 0.8em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-left: 5px; }
+        .profile-input {
+            width: 100%; padding: 14px 20px; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            color: #fff; font-size: 1.1em; outline: none; transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        .profile-input:focus { border-color: #00ff88; background: rgba(0,255,136,0.05); }
+        .profile-input[disabled] { color: #666; cursor: not-allowed; }
+
+        .btn-save {
+            width: 100%; padding: 15px; background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000; font-size: 1.1em; font-weight: 900; border: none; border-radius: 12px;
+            cursor: pointer; letter-spacing: 0.5px; transition: all 0.3s; margin-top: 10px;
+        }
+        .btn-save:hover { box-shadow: 0 4px 20px rgba(0,255,136,0.4); transform: translateY(-2px); }
+
+        .btn-logout {
+            width: 100%; padding: 15px; background: transparent; border: 1px solid #ff4444;
+            color: #ff4444; font-size: 1em; font-weight: bold; border-radius: 12px;
+            cursor: pointer; transition: all 0.3s; margin-top: 10px;
+        }
+        .btn-logout:hover { background: rgba(255, 68, 68, 0.1); box-shadow: 0 4px 20px rgba(255,68,68,0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="/fifa_project/index.html" id="topNav" class="btn-back-lobby" style="display: inline-flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 0.85em; font-weight: 700; text-transform: uppercase; background: rgba(0, 0, 0, 0.3); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 20px;">
+            <span style="font-size: 1.2em;">←</span> Lobi
+        </a>
+
+        <div class="header-section">
+            <h1 id="pageTitle">👤 Profilim</h1>
+        </div>
+
+        <div class="profile-container">
+            <label class="avatar-wrapper" for="avatarInput">
+                <div class="avatar-placeholder" id="avatarPlaceholder">👤</div>
+                <img src="" id="avatarPreview" class="avatar-preview" style="display: none;">
+                <div class="avatar-overlay">Değiştir</div>
+            </label>
+            <input type="file" id="avatarInput" accept="image/*">
+            
+            <button id="removePhotoBtn" class="btn-remove-photo" onclick="removePhoto()">🗑️ Fotoğrafı Kaldır</button>
+
+            <div class="input-group">
+                <label>E-Posta Adresi</label>
+                <input type="text" id="emailInput" class="profile-input" disabled>
+            </div>
+
+            <div class="input-group">
+                <label>Oyuncu Adı (Sahada Görünecek)</label>
+                <input type="text" id="nameInput" class="profile-input" placeholder="Örn: Alperen">
+            </div>
+
+            <button id="saveBtn" class="btn-save" onclick="saveProfile()">💾 Profili Kaydet</button>
+            <button class="btn-logout" onclick="logout()">🚪 Çıkış Yap</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="bottomNav" style="display: flex;">
+        <div class="nav-item" onclick="window.location.href='/fifa_project/index.html'">
+            <span class="nav-icon">🏆</span><span>Turnuvalar</span>
+        </div>
+        <div class="nav-item active" onclick="window.location.href='/fifa_project/profil.html'">
+            <span class="nav-icon">👤</span><span>Profilim</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXfQzf_zNClZHzSClAVIFY4Jozlx44yV0",
+            authDomain: "football-tournament-web-app.firebaseapp.com",
+            databaseURL: "https://football-tournament-web-app-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "football-tournament-web-app",
+            storageBucket: "football-tournament-web-app.firebasestorage.app",
+            messagingSenderId: "381451877946",
+            appId: "1:381451877946:web:d3cc57357ae68c5bc63f03"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUserUid = null;
+        let currentBase64Image = "";
+
+        const Toast = Swal.mixin({
+            toast: true, position: 'bottom-end', showConfirmButton: false,
+            timer: 3000, timerProgressBar: true, background: '#1e1e2e', color: '#fff'
+        });
+
+        // 🔥 YENİ: ZAMAN AŞIMI ZIRHI
+        const fetchWithTimeout = (promise, ms = 6000) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+            ]);
+        };
+
+        window.logout = function() {
+            signOut(auth).then(() => window.location.href = "/fifa_project/login.html").catch(err => {
+                window.location.href = "/fifa_project/login.html"; // Zorla çıkış garantisi
+            });
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = "/fifa_project/login.html?returnTo=" + currentUrl;
+            } else {
+                currentUserUid = user.uid;
+                document.getElementById('emailInput').value = user.email;
+                
+                try {
+                    // Profil verisini çekerken maksimum 6 saniye bekle
+                    const userRef = ref(db, `oyuncu_havuzu/${currentUserUid}`);
+                    const snapshot = await fetchWithTimeout(get(userRef), 6000);
+                    
+                    if (snapshot.exists() && snapshot.val().name) {
+                        const data = snapshot.val();
+                        document.getElementById('nameInput').value = data.name;
+                        if (data.image) {
+                            currentBase64Image = data.image;
+                            document.getElementById('avatarPreview').src = data.image;
+                            document.getElementById('avatarPreview').style.display = 'block';
+                            document.getElementById('avatarPlaceholder').style.display = 'none';
+                            document.getElementById('removePhotoBtn').style.display = 'block';
+                        }
+                    } else {
+                        document.getElementById('topNav').style.display = 'none';
+                        document.getElementById('bottomNav').style.display = 'none';
+                        document.getElementById('pageTitle').innerText = "🎮 Karakter Oluştur";
+                        document.getElementById('saveBtn').innerHTML = "🚀 Devam Et";
+                        
+                        Swal.fire({
+                            title: 'Hoş Geldiniz! 🎉',
+                            text: 'Turnuvalara katılmadan önce lütfen sahada görünecek karakter ismini belirle.',
+                            icon: 'info',
+                            confirmButtonText: 'Anladım',
+                            confirmButtonColor: '#00ff88',
+                            background: '#1e1e2e',
+                            color: '#fff',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        });
+                    }
+                } catch (error) {
+                    // EĞER ÇÖKERSE VEYA BEKLERSE EKRANA UYARI BAS VE KULLANICIYI REHİN BIRAKMA
+                    document.querySelector('.profile-container').innerHTML = `
+                        <div style="text-align:center; color:#ff4444; width:100%;">
+                            <h2>Bağlantı Hatası</h2>
+                            <p style="color:#aaa;">Profil bilgilerin çekilirken bağlantı koptu. Lütfen sayfayı yenile.</p>
+                            <button onclick="window.location.reload()" class="btn-save" style="margin-bottom:10px;">🔄 Yeniden Dene</button>
+                            <button onclick="logout()" class="btn-logout">🚪 Zorla Çıkış Yap</button>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        const processImageFile = (file) => {
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                return Toast.fire({ icon: 'error', title: 'Lütfen geçerli bir resim bırakın!' });
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                return Toast.fire({ icon: 'error', title: 'Resim boyutu 5MB\'tan küçük olmalı!' });
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = async function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 250; const MAX_HEIGHT = 250;
+                    let width = img.width; let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    currentBase64Image = canvas.toDataURL('image/webp', 0.7);
+
+                    document.getElementById('avatarPreview').src = currentBase64Image;
+                    document.getElementById('avatarPreview').style.display = 'block';
+                    document.getElementById('avatarPlaceholder').style.display = 'none';
+                    document.getElementById('removePhotoBtn').style.display = 'block';
+
+                    if (currentUserUid) {
+                        try {
+                            await update(ref(db, `oyuncu_havuzu/${currentUserUid}`), { image: currentBase64Image });
+                            Toast.fire({ icon: 'success', title: 'Profil fotoğrafı güncellendi!' });
+                        } catch (e) { console.error(e); }
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('avatarInput').addEventListener('change', function(e) {
+            processImageFile(e.target.files[0]);
+        });
+
+        const dropZone = document.querySelector('.avatar-wrapper');
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-active');
+                document.querySelector('.avatar-overlay').innerText = "Bırak!";
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-active');
+                document.querySelector('.avatar-overlay').innerText = "Değiştir";
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-active');
+                document.querySelector('.avatar-overlay').innerText = "Değiştir";
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    processImageFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        window.removePhoto = function() {
+            Swal.fire({
+                title: 'Fotoğrafı Kaldır',
+                text: 'Silmek istediğine emin misin?',
+                icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#ff4444', cancelButtonColor: '#555',
+                confirmButtonText: 'Evet, Sil!', cancelButtonText: 'İptal', background: '#1e1e2e', color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    currentBase64Image = "";
+                    document.getElementById('avatarInput').value = ""; 
+                    document.getElementById('avatarPreview').src = "";
+                    document.getElementById('avatarPreview').style.display = 'none';
+                    document.getElementById('avatarPlaceholder').style.display = 'block';
+                    document.getElementById('removePhotoBtn').style.display = 'none';
+                    
+                    if (currentUserUid) {
+                        try {
+                            await update(ref(db, `oyuncu_havuzu/${currentUserUid}`), { image: "" });
+                            Toast.fire({ icon: 'success', title: 'Fotoğraf silindi.' });
+                        } catch (e) {}
+                    }
+                }
+            });
+        };
+
+        window.saveProfile = async function() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name.length < 2) return Toast.fire({ icon: 'warning', title: 'En az 2 karakter olmalıdır!' });
+
+            try {
+                await update(ref(db, `oyuncu_havuzu/${currentUserUid}`), {
+                    uid: currentUserUid, name: name, image: currentBase64Image
+                });
+                Toast.fire({ icon: 'success', title: 'Başarıyla kaydedildi!' });
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnUrl = urlParams.get('returnTo');
+
+                setTimeout(() => {
+                    if (returnUrl) {
+                        window.location.href = returnUrl;
+                    } else {
+                        const isFirstTime = document.getElementById('topNav').style.display === 'none';
+                        if (isFirstTime) window.location.href = "/fifa_project/index.html";
+                    }
+                }, 1000);
+            } catch (error) {
+                Toast.fire({ icon: 'error', title: 'Kaydedilirken hata oluştu.' });
+            }
+        };
+    </script>
+</body>
+</html>

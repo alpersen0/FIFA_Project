@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli | FIFA Turnuva</title>
+    <link rel="stylesheet" href="/fifa_project/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-container { z-index: 99999 !important; }
+        .admin-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ffaa00; padding-bottom: 15px; margin-bottom: 25px; }
+        .admin-header h1 { margin: 0; color: #ffaa00; font-size: 1.8em; }
+        .admin-table-wrap { overflow-x: auto; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,170,0,0.2); }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        .admin-table th, .admin-table td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+        .admin-table th { background: rgba(255, 170, 0, 0.1); color: #ffaa00; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85em; }
+        .admin-table tr:hover { background: rgba(255,255,255,0.05); }
+        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #00ff88; }
+        .admin-avatar-ph { width: 45px; height: 45px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 1.2em; border: 2px solid #555; }
+        .badge-admin { background: #ff4444; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: bold; margin-left: 10px; vertical-align: middle; }
+        
+        .btn-delete-user {
+            background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; color: #ff4444;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s;
+        }
+        .btn-delete-user:hover { background: #ff4444; color: #fff; box-shadow: 0 0 10px rgba(255,68,68,0.4); }
+        
+        .btn-back-lobby { 
+            display: inline-flex; align-items: center; gap: 8px; color: #888; text-decoration: none; 
+            font-size: 0.85em; font-weight: 700; text-transform: uppercase; background: rgba(0, 0, 0, 0.3); 
+            padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s; 
+        }
+        .btn-back-lobby:hover { color: #ffaa00; border-color: rgba(255, 170, 0, 0.3); background: rgba(255, 170, 0, 0.05); }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <a href="/fifa_project/index.html" class="btn-back-lobby" style="margin-bottom: 20px;">
+            <span class="back-icon">←</span> Lobiye Dön
+        </a>
+
+        <div class="admin-header">
+            <h1>👑 Tüm Oyuncular (Admin)</h1>
+            <div style="color: #ccc; font-weight: bold;">Toplam: <span id="totalPlayers" style="color: #ffaa00;">0</span></div>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Fotoğraf</th>
+                        <th>Oyuncu Adı</th>
+                        <th style="width: 100px; text-align: center;">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="adminPlayerList">
+                    <tr><td colspan="3" style="text-align: center; color: #888;">Yükleniyor...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXfQzf_zNClZHzSClAVIFY4Jozlx44yV0",
+            authDomain: "football-tournament-web-app.firebaseapp.com",
+            databaseURL: "https://football-tournament-web-app-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "football-tournament-web-app",
+            storageBucket: "football-tournament-web-app.firebasestorage.app",
+            messagingSenderId: "381451877946",
+            appId: "1:381451877946:web:d3cc57357ae68c5bc63f03"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        window.Toast = Swal.mixin({
+            toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3000, background: '#1e1e2e', color: '#fff'
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return window.location.href = "/fifa_project/login.html";
+
+            try {
+                // Admin yetki kontrolü
+                const [adminSnap1, adminSnap2] = await Promise.all([ get(ref(db, 'Admins')), get(ref(db, 'admins')) ]);
+                const adminsData = { ...(adminSnap1.val() || {}), ...(adminSnap2.val() || {}) };
+                let isAdmin = false;
+                Object.keys(adminsData).forEach(k => { if (k.trim() === user.uid) isAdmin = true; });
+
+                if (!isAdmin) {
+                    alert("Bu sayfaya giriş yetkiniz yok!");
+                    window.location.href = "/fifa_project/index.html";
+                    return;
+                }
+
+                // Adminse verileri canlı dinle (Biri silinirse tablo anında güncellenir)
+                onValue(ref(db, 'oyuncu_havuzu'), (snapshot) => {
+                    const tbody = document.getElementById('adminPlayerList');
+                    tbody.innerHTML = '';
+
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const uids = Object.keys(data);
+                        document.getElementById('totalPlayers').innerText = uids.length;
+
+                        uids.forEach(uid => {
+                            const p = data[uid];
+                            const isUserAdmin = adminsData[uid] ? `<span class="badge-admin">ADMİN</span>` : '';
+                            const imgHtml = p.image ? `<img src="${p.image}" class="admin-avatar">` : `<div class="admin-avatar-ph">👤</div>`;
+                            
+                            // Kendini silmesini engellemek için ufak bir kontrol
+                            const deleteBtn = (uid === user.uid) 
+                                ? `<span style="color:#888; font-size:0.8em;">(Sen)</span>` 
+                                : `<button class="btn-delete-user" onclick="deletePlayer('${uid}', '${p.name.replace(/'/g, "\\'")}')">🗑️ Sil</button>`;
+
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${imgHtml}</td>
+                                    <td style="font-weight: bold; color: #fff; font-size: 1.1em;">${p.name} ${isUserAdmin}</td>
+                                    <td style="text-align: center;">${deleteBtn}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        document.getElementById('totalPlayers').innerText = "0";
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #888;">Sistemde kayıtlı oyuncu bulunamadı.</td></tr>';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Veriler çekilirken bir hata oluştu.");
+            }
+        });
+
+        // 🗑️ Oyuncuyu Silme Fonksiyonu
+        window.deletePlayer = function(uid, playerName) {
+            Swal.fire({
+                title: 'Kalıcı Olarak Silinecek!',
+                html: `<span style="color:#ff4444; font-weight:bold; font-size:1.2em;">${playerName}</span><br><br>Bu oyuncunun profili kalıcı olarak silinecek. Emin misin?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff4444',
+                cancelButtonColor: '#555',
+                confirmButtonText: 'Evet, Sil!',
+                cancelButtonText: 'İptal',
+                background: '#1e1e2e',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await remove(ref(db, `oyuncu_havuzu/${uid}`));
+                        Toast.fire({ icon: 'success', title: 'Oyuncu başarıyla silindi!' });
+                    } catch (error) {
+                        console.error("Silme hatası:", error);
+                        Toast.fire({ icon: 'error', title: 'Silinirken hata oluştu.' });
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>

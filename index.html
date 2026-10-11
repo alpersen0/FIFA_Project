@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFA Turnuva Lobisi</title>
+    <link rel="stylesheet" href="/fifa_project/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .name-input-wrap { position: relative; margin-bottom: 15px; }
+        #newTName {
+            width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #333;
+            background: #222; color: white; font-size: 1em; box-sizing: border-box;
+            transition: border-color 0.25s; outline: none;
+        }
+        #newTName:focus  { border-color: #555; }
+        #newTName.error  { border-color: #ff4444; }
+        #newTName.ok     { border-color: #00ff88; }
+
+        #nameWarning {
+            display: none; color: #ff4444; font-size: 0.82em; margin-top: 5px;
+            padding: 6px 10px; background: rgba(255,68,68,0.1); border-radius: 6px; border-left: 3px solid #ff4444;
+        }
+
+        #btnSaveTournament { width: 100%; margin: 0; transition: all 0.3s ease; }
+        #btnSaveTournament.error-state {
+            background: linear-gradient(45deg, #ff4444, #cc2222) !important;
+            color: #fff !important; box-shadow: 0 4px 15px rgba(255,68,68,0.4) !important; cursor: not-allowed;
+        }
+        
+        /* 🔥 GÜNCELLENDİ: Kusursuz Simetri İçin İkili Buton Yapısı */
+        .action-buttons-wrap {
+            display: flex; gap: 15px; margin-bottom: 25px; width: 100%;
+            align-items: stretch; /* Boylarını otomatik eşitler */
+        }
+        .btn-create-t, .btn-join-t {
+            flex: 1; 
+            padding: 0 !important; /* Yüksekliği height ile kontrol edeceğiz */
+            height: 55px !important; /* İkisi de milimetrik olarak 55px boyunda olacak */
+            border-radius: 12px !important; /* İkisinin de kavisi aynı olacak */
+            font-weight: 900 !important; 
+            font-size: 1.05em !important; 
+            cursor: pointer; transition: all 0.3s; text-align: center;
+            display: flex; align-items: center; justify-content: center; 
+            box-sizing: border-box;
+        }
+        .btn-create-t { background: linear-gradient(45deg, #00ff88, #00cc6a) !important; color: #000 !important; border: none !important; }
+        .btn-create-t:hover { box-shadow: 0 4px 20px rgba(0,255,136,0.4) !important; transform: translateY(-2px); }
+        
+        .btn-join-t { background: rgba(30, 30, 30, 0.6) !important; border: 2px solid #00ff88 !important; color: #00ff88 !important; }
+        .btn-join-t:hover { background: rgba(0, 255, 136, 0.1) !important; box-shadow: 0 4px 20px rgba(0,255,136,0.2) !important; transform: translateY(-2px); }
+        
+        @media (max-width: 480px) { 
+            .action-buttons-wrap { flex-direction: column; gap: 12px; } 
+        }
+
+        .header-wrap {
+            display: flex; justify-content: space-between; align-items: center; 
+            width: 100%; max-width: 1000px; margin: 0 auto 25px auto;
+            gap: 10px;
+        }
+        .header-wrap h1 { margin: 0; font-size: 1.4em; white-space: nowrap; }
+        
+        .header-right {
+            display: flex; align-items: center; gap: 12px;
+        }
+        #headerPlayerName {
+            color: #00ff88; font-weight: bold; font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .btn-logout {
+            background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; 
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-logout:hover { background: #ff4444; color: #fff; }
+
+        @media (max-width: 480px) {
+            .header-wrap { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .header-right { width: 100%; justify-content: space-between; }
+        }
+
+        .btn-delete-t {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .btn-delete-t:hover { background: #ff4444; color: #fff; box-shadow: 0 0 10px rgba(255,68,68,0.4); }
+        
+        .swal2-container {
+            z-index: 99999 !important;
+        }
+        /* 🔥 TEK SATIR KESME: Lobi Turnuva İsimleri */
+        .t-title {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: calc(100% - 65px) !important; /* Sil butonu için koruma kalkanı */
+            display: block !important;
+            word-break: normal !important; /* Kelime ortasından saçma kırılmaları yasaklar */
+        }
+        /* 🔥 MOBİL DÜZELTMELER: Taşan İsimler ve Ezilen Butonlar */
+        
+        /* 1. Uzun İsimleri Üç Nokta (...) ile Kesme */
+        #headerPlayerName {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 180px !important; /* Masaüstünde maksimum genişlik */
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+
+        /* Sayfanın sağa doğru kaymasını (taşmasını) kesin engeller */
+        body { overflow-x: hidden !important; }
+
+        @media (max-width: 480px) {
+            /* Mobilde ekran küçük olduğu için ismin alanını daraltıyoruz */
+            #headerPlayerName {
+                max-width: 110px !important; 
+                font-size: 0.9em !important;
+            }
+
+            /* Çıkış yap butonunu mobilde biraz küçültelim ki rahat sığsın */
+            .btn-logout {
+                padding: 8px 12px !important;
+                font-size: 0.8em !important;
+                white-space: nowrap !important;
+            }
+
+            /* 🔥 GÜNCELLENDİ: Daha Kalın ve Tok Aksiyon Butonları */
+            .action-buttons-wrap { 
+                flex-direction: column !important; 
+                gap: 12px !important; 
+                width: 100% !important;
+            }
+            .btn-create-t, .btn-join-t {
+                width: 100% !important; 
+                height: 70px !important; /* 🔥 55px'ten 64px'e çıkarıldı (Daha kalın) */
+                border-radius: 14px !important; /* Kalınlığa uyum sağlaması için kavis artırıldı */
+                font-size: 1.1em !important; /* Yazı bir tık büyütüldü */
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-wrap">
+        <h1>🎮 Turnuva Lobisi</h1>
+        <div class="header-right">
+            <div id="headerPlayerName"></div>
+            <button class="btn-logout" onclick="logout()">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        
+        <div class="action-buttons-wrap">
+            <button class="btn-create-t" onclick="createTournament()">+ Yeni Turnuva</button>
+            <button class="btn-join-t" onclick="joinWithCode()">🔑 Kod ile Katıl</button>
+        </div>
+        <button id="btnAdminPanel" style="display: none; width: 100%; margin-bottom: 25px; padding: 16px; background: linear-gradient(145deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid rgba(255, 170, 0, 0.4); border-bottom: 2px solid #ffaa00; color: #ffaa00; font-size: 1.1em; font-weight: 900; border-radius: 14px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;" onclick="window.location.href='/fifa_project/oyuncular.html'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 25px rgba(0,0,0,0.6), 0 0 20px rgba(255, 170, 0, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15)';">
+            👑 Tüm Oyuncuları Yönet (Admin)
+        </button>
+
+        <div id="tournamentsGrid" class="tournaments-grid">
+            <p style='color:#aaa; text-align:center;'>Yükleniyor...</p>
+        </div>
+    </div>
+
+    <div id="tournamentModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:#00ff88; margin-top:0;">Yeni Turnuva Başlat</h2>
+
+            <div class="name-input-wrap">
+                <input type="text" id="newTName" placeholder="Turnuva Adı" oninput="checkNameConflict(this.value)">
+                <div id="nameWarning">⚠️ Bu isimde bir turnuva zaten var!</div>
+            </div>
+
+            <div style="margin-top: 15px; margin-bottom: 20px; text-align: left;">
+                <label style="color:#aaa; font-size:0.85em; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Kaç Kişilik Olacak?</label>
+                <select id="tCapacity" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); font-size: 1em; outline: none; cursor: pointer;">
+                    <option value="4">4 Oyuncu</option>
+                    <option value="6">6 Oyuncu</option>
+                    <option value="8" selected>8 Oyuncu</option>
+                    <option value="12">12 Oyuncu</option>
+                    <option value="16">16 Oyuncu</option>
+                </select>
+            </div>
+
+            <button id="btnSaveTournament" class="btn-create-t" onclick="saveNewTournament()">Oluştur & Davet Linki Al</button>
+            <button onclick="closeModal()" style="width:100%; margin-top:10px; background:none; border:none; color:#ff4444; cursor:pointer;">İptal</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="mainBottomNav" style="display: flex;">
+        <div class="nav-item active" onclick="window.location.href='/fifa_project/index.html'">
+            <span class="nav-icon">🏆</span><span>Turnuvalar</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='/fifa_project/profil.html'">
+            <span class="nav-icon">👤</span><span>Profilim</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, get, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXfQzf_zNClZHzSClAVIFY4Jozlx44yV0",
+            authDomain: "football-tournament-web-app.firebaseapp.com",
+            databaseURL: "https://football-tournament-web-app-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "football-tournament-web-app",
+            storageBucket: "football-tournament-web-app.firebasestorage.app",
+            messagingSenderId: "381451877946",
+            appId: "1:381451877946:web:d3cc57357ae68c5bc63f03"
+        };
+
+        const app  = initializeApp(firebaseConfig);
+        const db   = getDatabase(app);
+        const auth = getAuth(app);
+
+        const grid = document.getElementById("tournamentsGrid");
+        let existingNames = new Set();
+        
+        let currentUserUid = null;
+        let myPlayerName   = null; 
+        let isAdmin = false;
+
+        const Toast = Swal.mixin({
+            toast: true, position: 'bottom-end', showConfirmButton: false,
+            timer: 3000, timerProgressBar: true, background: '#1e1e2e', color: '#fff'
+        });
+
+        // 🔥 YENİ: ZAMAN AŞIMI (TIMEOUT) ZIRHI
+        // Firebase'in sonsuza kadar beklemesini engelleyen sihirli fonksiyon
+        const fetchWithTimeout = (promise, ms = 6000) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+            ]);
+        };
+
+        window.logout = function() {
+            signOut(auth).then(() => window.location.href = "/fifa_project/login.html").catch(err => {
+                // Eğer Firebase'den çıkış yapılamazsa bile tarayıcıyı zorla Login'e at (Kullanıcıyı rehin bırakma)
+                window.location.href = "/fifa_project/login.html";
+            });
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = "/fifa_project/login.html?returnTo=" + currentUrl;
+            } else {
+                currentUserUid = user.uid;
+                
+                try {
+                    const [adminSnap1, adminSnap2, myPlayerSnap] = await fetchWithTimeout(Promise.all([
+                        get(ref(db, 'Admins')),
+                        get(ref(db, 'admins')),
+                        get(ref(db, `oyuncu_havuzu/${currentUserUid}`))
+                    ]), 6000);
+                    
+                    const adminsData = { ...(adminSnap1.val() || {}), ...(adminSnap2.val() || {}) };
+                    isAdmin = false;
+                    Object.keys(adminsData).forEach(key => {
+                        if (key.trim() === currentUserUid) {
+                            const val = String(adminsData[key]).trim().toLowerCase();
+                            if (val === 'true') isAdmin = true;
+                        }
+                    });
+                    // Adminse paneli görünür yap
+                    if (isAdmin) {
+                        document.getElementById('btnAdminPanel').style.display = 'block';
+                    }
+
+                    const headerNameEl = document.getElementById('headerPlayerName');
+                    if (myPlayerSnap.exists()) {
+                        const originalName = myPlayerSnap.val().name; 
+                        myPlayerName = originalName.toLowerCase().trim(); 
+                        headerNameEl.innerHTML = isAdmin ? `👑 ${originalName}` : `👤 ${originalName}`; 
+                    } else {
+                        headerNameEl.innerHTML = `<a href="profil.html" style="color:#aaa; text-decoration:none; font-size:0.85em; border-bottom: 1px dashed #aaa;">Profilini Oluştur</a>`;
+                    }
+
+                    loadTournaments();
+
+                    // 🔥 YENİ: URL'de 'action=join' mesajı varsa Kod Girme kutusunu otomatik aç
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('action') === 'join') {
+                        // URL'yi temizliyoruz ki kullanıcı sayfayı yenilediğinde sürekli pop-up açılmasın
+                        window.history.replaceState(null, '', window.location.pathname);
+                        
+                        // Arayüzün tam yüklenmesi için 400 milisaniye bekleyip pop-up'ı patlatıyoruz
+                        setTimeout(() => {
+                            window.joinWithCode();
+                        }, 400);
+                    }
+
+                } catch (error) {
+                    // 🔥 EĞER ZAMAN AŞIMINA UĞRARSA VEYA ÇÖKERSE (Kullanıcı rehin kalmaz)
+                    console.error("Kritik Veri Çekme Hatası:", error);
+                    document.getElementById('headerPlayerName').innerHTML = `<span style="color:#ff4444;">Bağlantı Hatası</span>`;
+                    grid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: rgba(255,68,68,0.1); border-radius: 12px; border: 1px solid #ff4444;">
+                            <h3 style="color:#ff4444; margin-top:0;">Sunucu Bağlantısı Koptu</h3>
+                            <p style="color:#ccc; font-size:0.9em; margin-bottom:20px;">Firebase ile bağlantı kurulamadı. Lütfen bağlantınızı kontrol edin.</p>
+                            <button onclick="window.location.reload()" class="btn-create-t" style="width:auto; padding:10px 20px; font-size:0.9em; margin-right:10px; display:inline-block;">🔄 Yeniden Dene</button>
+                            <button onclick="logout()" class="btn-logout" style="padding:10px 20px; font-size:0.9em; display:inline-block; margin:0;">🚪 Çıkış Yap</button>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        function loadTournaments() {
+            try {
+                onValue(ref(db, 'turnuvalar'), (snapshot) => {
+                    grid.innerHTML = "";
+                    existingNames.clear();
+                    const data = snapshot.val();
+                    
+                    if (!data) {
+                        grid.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; padding: 50px 0; color: #aaa; font-size: 1.1em;'>Henüz turnuva yok.</div>";
+                        return;
+                    }
+
+                    let myTournaments = [];
+
+                    Object.keys(data).forEach(id => {
+                        try {
+                            const t = data[id].meta;
+                            if (!t) return;
+                            existingNames.add(t.isim.trim().toLowerCase());
+
+                            const isOwner = t.ownerUid === currentUserUid;
+                            let isParticipant = false;
+                            
+                            if (data[id].oyuncular) {
+                                isParticipant = data[id].oyuncular.some(p => p.uid === currentUserUid);
+                            }
+
+                            if (isOwner || isParticipant || isAdmin) {
+                                myTournaments.push({ id: id, meta: t, isOwner: isOwner });
+                            }
+                        } catch(e) {}
+                    });
+
+                    myTournaments.sort((a, b) => b.meta.lastUpdated - a.meta.lastUpdated);
+
+                    if (myTournaments.length === 0) {
+                        grid.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; padding: 50px 0; color: #aaa; font-size: 1.1em;'>Sana ait veya katıldığın bir turnuva bulunmuyor.</div>";
+                        return;
+                    }
+
+                    myTournaments.forEach(tData => {
+                        const card = document.createElement("div");
+                        card.className = "t-card";
+                        card.style.position = "relative"; 
+                        
+                        card.onclick = (e) => {
+                            if (e.target.closest('.btn-delete-t')) return;
+                            window.location.href = `/fifa_project/turnuva.html?id=${tData.id}`;
+                        };
+
+                        const title = document.createElement("h2");
+                        title.className = "t-title";
+                        title.textContent = tData.meta.isim;
+
+                        const date = document.createElement("div");
+                        date.className = "t-date";
+                        const dateStr = new Date(tData.meta.lastUpdated).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+                        date.textContent = "Son İşlem: " + dateStr;
+
+                        const creatorInfo = document.createElement("div");
+                        creatorInfo.style.cssText = "font-size: 0.7em; color: #888; margin-top: 5px; font-style: italic;";
+                        creatorInfo.textContent = "✍️ Kurucu: " + (tData.meta.kurucuIsmi || "Bilinmiyor");
+
+                        card.appendChild(title);
+                        card.appendChild(date);
+                        card.appendChild(creatorInfo);
+                        
+                        if (tData.isOwner || isAdmin) {
+                            const delBtn = document.createElement("button");
+                            delBtn.className = "btn-delete-t";
+                            delBtn.innerHTML = "🗑️ Sil";
+                            delBtn.onclick = (e) => {
+                                e.stopPropagation(); 
+                                deleteTournament(tData.id, tData.meta.isim);
+                            };
+                            card.appendChild(delBtn);
+                        }
+
+                        grid.appendChild(card);
+                    });
+                }, (error) => {
+                    console.error("Firebase Listen Hatası:", error);
+                });
+            } catch (err) {
+                console.error("Turnuva yükleme hatası", err);
+            }
+        }
+
+        window.deleteTournament = function(id, name) {
+            Swal.fire({
+                title: 'Emin misin?',
+                html: `<span style="color:#ff4444; font-weight:bold;">${name}</span> turnuvasını siliyorsun!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff4444',
+                cancelButtonColor: '#555',
+                confirmButtonText: 'Evet, Sil!',
+                cancelButtonText: 'İptal',
+                background: '#1e1e2e',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await remove(ref(db, `turnuvalar/${id}`));
+                    Toast.fire({ icon: 'success', title: 'Silindi!' });
+                }
+            });
+        };
+
+        window.checkNameConflict = function(value) {
+            const input   = document.getElementById('newTName');
+            const warning = document.getElementById('nameWarning');
+            const btn     = document.getElementById('btnSaveTournament');
+            const trimmed = value.trim().toLowerCase();
+
+            if (trimmed && existingNames.has(trimmed)) {
+                input.classList.add('error'); input.classList.remove('ok');
+                warning.style.display = 'block'; btn.classList.add('error-state');
+            } else {
+                input.classList.remove('error'); input.classList.toggle('ok', trimmed.length > 0);
+                warning.style.display = 'none'; btn.classList.remove('error-state');
+            }
+        };
+
+        // 🔥 GÜNCELLENDİ: Artık veritabanından liste çekmesine gerek yok, anında açılır.
+        window.createTournament = function() {
+            const modal = document.getElementById('tournamentModal');
+            document.getElementById('newTName').value = '';
+            document.getElementById('newTName').className = '';
+            document.getElementById('nameWarning').style.display = 'none';
+            document.getElementById('btnSaveTournament').classList.remove('error-state');
+            document.getElementById('tCapacity').value = '8'; // Varsayılan 8 kişi
+            modal.style.display = 'flex';
+        };
+
+        // 🔥 GÜNCELLENDİ: Hata Sonrası Tekrar Açılan Akıllı Kod Kutusu
+        window.joinWithCode = function() {
+            Swal.fire({
+                title: 'Turnuvaya Katıl',
+                text: 'Kurucudan aldığın davet kodunu gir:',
+                input: 'text',
+                inputPlaceholder: 'Örn: FCT-XXXXX',
+                showCancelButton: true,
+                confirmButtonColor: '#00ff88',
+                cancelButtonColor: '#555',
+                confirmButtonText: 'Git 🚀',
+                cancelButtonText: 'İptal',
+                background: '#1e1e2e',
+                color: '#fff',
+                inputValidator: (value) => {
+                    if (!value || value.trim().length === 0) {
+                        return 'Lütfen bir kod girin!';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let kod = result.value.trim();
+                    
+                    // 1. Akıllı Cımbızlama: Kullanıcı tüm linki yapıştırdıysa içinden kodu al
+                    if (kod.includes('?kod=')) {
+                        kod = kod.split('?kod=')[1].split('&')[0];
+                    }
+
+                    // 2. Firebase Güvenlik Filtresi: Hatalı karakterler varsa engelle
+                    if (/[.#$\[\]]/.test(kod) || kod.startsWith('http')) {
+                        Swal.fire({ 
+                            icon: 'warning', 
+                            title: 'Geçersiz Format', 
+                            text: 'Girdiğiniz veri bir turnuva kodu değil. Lütfen sadece kodu girin.', 
+                            background: '#1e1e2e', color: '#fff', confirmButtonColor: '#00ff88'
+                        }).then(() => {
+                            // 🔥 YENİ: Uyarı kutusu kapandığında 0.2 saniye bekleyip kod girme ekranını TEKRAR AÇ
+                            setTimeout(() => {
+                                window.joinWithCode();
+                            }, 200);
+                        });
+                        return; // İşlemi durdur
+                    }
+
+                    window.location.href = `/fifa_project/katil.html?kod=${kod}`;
+                }
+            });
+        };
+
+        window.closeModal = () => document.getElementById('tournamentModal').style.display = 'none';
+
+        // 🔥 GÜNCELLENDİ: Premium ve Kısa Oda Kodu Üretici (ZIRHLI)
+        window.saveNewTournament = async function() {
+            const name    = document.getElementById('newTName').value.trim();
+            const trimmed = name.toLowerCase();
+
+            if (existingNames.has(trimmed)) {
+                document.getElementById('nameWarning').style.display = 'block'; 
+                return;
+            }
+
+            if (!name) {
+                Toast.fire({ icon: 'error', title: 'Lütfen turnuva adı girin!' });
+                return;
+            }
+
+            const capacity = parseInt(document.getElementById('tCapacity').value, 10);
+            
+            // 🔥 YENİ: Premium Kod Üretimi (Örn: FCT-X9B2K)
+            // Karışıklık yaratmasın diye 0, O, 1, I harflerini çıkardık.
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let randomCode = '';
+            for (let i = 0; i < 5; i++) {
+                randomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const id = `FCT-${randomCode}`;
+            
+            let kurucuAdi = myPlayerName ? myPlayerName : (isAdmin ? "Admin" : "Sistem");
+            kurucuAdi = kurucuAdi.charAt(0).toUpperCase() + kurucuAdi.slice(1);
+
+            const kurucuData = [{
+                id: 1, 
+                uid: currentUserUid, 
+                name: kurucuAdi, 
+                points: 0, 
+                gd: 0, 
+                played: 0
+            }];
+
+            try {
+                await set(ref(db, `turnuvalar/${id}`), {
+                    meta: { 
+                        isim: name, 
+                        lastUpdated: Date.now(), 
+                        ownerUid: currentUserUid, 
+                        kurucuIsmi: kurucuAdi,
+                        kapasite: capacity,
+                        status: 'bekliyor'
+                    },
+                    oyuncular: kurucuData
+                });
+                
+                window.location.href = `/fifa_project/turnuva.html?id=${id}`;
+            } catch (error) {
+                console.error("Turnuva Kayıt Hatası:", error);
+                Toast.fire({ icon: 'error', title: 'Bağlantı hatası! Turnuva oluşturulamadı.' });
+            }
+        };
+    </script>
+</body>
+</html>

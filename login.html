@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap | FIFA Turnuva</title>
+    <link rel="stylesheet" href="/fifa_project/style.css">
+    <style>
+        /* Sayfayı dikeyde ve yatayda kusursuz ortalamak için body ayarı */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 480px; /* Genişliği 400px'den 480px'e çıkardık */
+            padding: 40px 30px; /* İç boşlukları biraz daha ferahlattık */
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            /* margin: 60px auto; satırını SİLDİK çünkü artık body onu ortalıyor */
+        }
+        .auth-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00ff88;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 1em;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0,255,136,0.2);
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000;
+            font-size: 1.05em;
+            font-weight: 900;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .auth-btn:hover {
+            box-shadow: 0 4px 20px rgba(0,255,136,0.4);
+            transform: translateY(-1px);
+        }
+        .auth-btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .auth-toggle span {
+            color: #00ff88;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .error-msg {
+            display: none;
+            color: #ff4444;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,68,68,0.1);
+            border-radius: 8px;
+            border-left: 3px solid #ff4444;
+        }
+        
+        /* 🔥 YENİ: Şifremi Unuttum Link Stili */
+        .forgot-password-link {
+            display: block;
+            text-align: right;
+            font-size: 0.85em;
+            color: #888;
+            text-decoration: none;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        .forgot-password-link:hover {
+            color: #00ff88;
+            text-decoration: underline;
+        }
+
+        /* Modallar için Stil (Şifre Sıfırlama) */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #1e1e1e;
+            border: 1px solid rgba(0,255,136,0.2);
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        /* 🔥 KAYIT OL MODU ÖZEL RENKLERİ (Mavi Tonu) */
+        .auth-container.signup-mode .auth-title {
+            color: #00aaff;
+        }
+        .auth-container.signup-mode .auth-btn {
+            background: linear-gradient(45deg, #00aaff, #0077cc);
+            color: #fff;
+        }
+        .auth-container.signup-mode .auth-btn:hover {
+            box-shadow: 0 4px 20px rgba(0, 170, 255, 0.4);
+        }
+        .auth-container.signup-mode .auth-toggle span {
+            color: #00aaff;
+        }
+        .auth-container.signup-mode .input-group input:focus {
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="auth-title" id="pageTitle">Giriş Yap</div>
+        
+        <div id="authError" class="error-msg"></div>
+
+        <form id="authForm" onsubmit="handleAuth(event)">
+            <div class="input-group">
+                <label>E-posta Adresi</label>
+                <input type="email" id="email" placeholder="ornek@domain.com" required>
+            </div>
+            
+            <div class="input-group">
+                <label>Şifre</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <a href="#" class="forgot-password-link" id="forgotBtn" onclick="openResetModal(event)">Şifremi Unuttum</a>
+
+            <button type="submit" id="submitBtn" class="auth-btn">Giriş Yap</button>
+        </form>
+
+        <div class="auth-toggle" id="toggleText">
+            Hesabın yok mu? <span onclick="toggleMode()">Kayıt Ol</span>
+        </div>
+    </div>
+
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#00ff88; margin-top:0; margin-bottom:10px;">Şifre Sıfırlama</h3>
+            <p style="color:#aaa; font-size:0.85em; margin-bottom:20px; line-height:1.4;">
+                Hesabınıza bağlı gerçek e-posta adresinizi girin. Size şifrenizi sıfırlayabileceğiniz güvenli bir bağlantı göndereceğiz.
+            </p>
+            <div id="resetError" class="error-msg"></div>
+            <div class="input-group">
+                <label>E-posta Adresi</label>
+                <input type="email" id="resetEmail" placeholder="ornek@domain.com">
+            </div>
+            <button class="auth-btn" onclick="sendResetMail()">Sıfırlama Bağlantısı Gönder</button>
+            <button onclick="closeResetModal()" style="width:100%; margin-top:12px; background:none; border:none; color:#888; cursor:pointer; font-size:0.9em;">İptal</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            onAuthStateChanged,
+            sendPasswordResetEmail 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // 🔥 YENİ: Veritabanından isim kontrolü yapmak için gereken fonksiyonlar
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // ⚠️ KENDİ GÜNCEL FİREBASE BİLGİLERİNİ YAPIŞTIR
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXfQzf_zNClZHzSClAVIFY4Jozlx44yV0",
+            authDomain: "football-tournament-web-app.firebaseapp.com",
+            databaseURL: "https://football-tournament-web-app-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "football-tournament-web-app",
+            storageBucket: "football-tournament-web-app.firebasestorage.app",
+            messagingSenderId: "381451877946",
+            appId: "1:381451877946:web:d3cc57357ae68c5bc63f03"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let isLoginMode = true;
+
+        // 🔥 GÜNCELLENDİ: Akıllı Yönlendirme (Gateway) Mekanizması
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Kullanıcı giriş yapmış, isim kontrolü yapalım
+                const userRef = ref(db, `oyuncu_havuzu/${user.uid}`);
+                const snapshot = await get(userRef);
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnUrl = urlParams.get('returnTo');
+
+                if (snapshot.exists() && snapshot.val().name) {
+                    // Kullanıcının ismi var. Hafızada link varsa oraya, yoksa Lobiye at.
+                    if (returnUrl) {
+                        window.location.href = returnUrl;
+                    } else {
+                        window.location.href = "/fifa_project/index.html";
+                    }
+                } else {
+                    // Kullanıcının ismi YOK. Onu zorla profil sayfasına atıyoruz.
+                    // Fakat profil sayfasında işini bitirince nereye döneceğini de linkin sonuna ekliyoruz.
+                    let redirectLink = "/fifa_project/profil.html";
+                    if (returnUrl) {
+                        redirectLink += "?returnTo=" + encodeURIComponent(returnUrl);
+                    }
+                    window.location.href = redirectLink;
+                }
+            }
+        });
+
+        // Giriş / Kayıt Mod Değiştirici
+        window.toggleMode = function() {
+            isLoginMode = !isLoginMode;
+            
+            const container = document.querySelector('.auth-container'); 
+            const pageTitle = document.getElementById('pageTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const toggleText = document.getElementById('toggleText');
+            const forgotBtn = document.getElementById('forgotBtn');
+            const errorDiv = document.getElementById('authError');
+
+            errorDiv.style.display = 'none';
+
+            if (isLoginMode) {
+                pageTitle.textContent = "Giriş Yap";
+                submitBtn.textContent = "Giriş Yap";
+                forgotBtn.style.display = "block";
+                toggleText.innerHTML = `Hesabın yok mu? <span onclick="toggleMode()">Kayıt Ol</span>`;
+                container.classList.remove('signup-mode'); 
+            } else {
+                pageTitle.textContent = "Kayıt Ol";
+                submitBtn.textContent = "Hesap Oluştur";
+                forgotBtn.style.display = "none"; 
+                toggleText.innerHTML = `Zaten hesabın var mı? <span onclick="toggleMode()">Giriş Yap</span>`;
+                container.classList.add('signup-mode'); 
+            }
+        };
+
+        // ANA GİRİŞ / KAYIT İŞLEMİ
+        window.handleAuth = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const errorDiv = document.getElementById('authError');
+
+            errorDiv.style.display = 'none';
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    // Kayıt başarılıysa alerti kaldırıyoruz çünkü sistem artık onu otomatik profile çekecek
+                }
+            } catch (error) {
+                console.error("Auth Hatası:", error.code);
+                errorDiv.style.display = 'block';
+                
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorDiv.textContent = '❌ Geçersiz bir e-posta adresi girdiniz.';
+                        break;
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential':
+                        errorDiv.textContent = '❌ E-posta adresi veya şifre hatalı.';
+                        break;
+                    case 'auth/email-already-in-use':
+                        errorDiv.textContent = '❌ Bu e-posta adresi zaten başka bir hesap tarafından kullanılıyor.';
+                        break;
+                    case 'auth/weak-password':
+                        errorDiv.textContent = '❌ Şifre çok zayıf! En az 6 karakter olmalıdır.';
+                        break;
+                    default:
+                        errorDiv.textContent = '❌ İşlem esnasında bir hata oluştu: ' + error.message;
+                }
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        };
+
+        // ŞİFRE SIFIRLAMA MODAL KONTROLLERİ
+        window.openResetModal = function(e) {
+            e.preventDefault();
+            document.getElementById('resetError').style.display = 'none';
+            document.getElementById('resetEmail').value = document.getElementById('email').value;
+            document.getElementById('resetModal').style.display = 'flex';
+        };
+
+        window.closeResetModal = function() {
+            document.getElementById('resetModal').style.display = 'none';
+        };
+
+        // FIREBASE OTOMATİK SIFIRLAMA MAİLİ GÖNDERME
+        window.sendResetMail = async function() {
+            const resetEmail = document.getElementById('resetEmail').value.trim();
+            const errorDiv = document.getElementById('resetError');
+            errorDiv.style.display = 'none';
+
+            if (!resetEmail) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = "⚠️ Lütfen e-posta adresinizi yazın.";
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, resetEmail);
+                alert("🔒 Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! Lütfen gelen kutunuzu (ve gereksiz/spam klasörünü) kontrol edin.");
+                closeResetModal();
+            } catch (error) {
+                console.error("Sıfırlama Hatası:", error);
+                errorDiv.style.display = 'block';
+                if (error.code === 'auth/invalid-email') {
+                    errorDiv.textContent = '❌ Geçersiz bir e-posta adresi.';
+                } else if (error.code === 'auth/user-not-found') {
+                    errorDiv.textContent = '❌ Bu e-posta adresine kayıtlı bir kullanıcı bulunamadı.';
+                } else {
+                    errorDiv.textContent = '❌ Mail gönderilirken bir hata oluştu, lütfen e-postanızı kontrol edin.';
+                }
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turnuva | FIFA 2v2</title>
+    <link rel="stylesheet" href="/fifa_project/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .swal2-container { z-index: 99999 !important; }
+
+        body.spectator-mode .auth-only { display: none !important; }
+        body.spectator-mode .pmc-actions { display: none !important; }
+        body.spectator-mode .reset-container { display: none !important; }
+        body.spectator-mode #navMatchBtn { display: none !important; }
+        
+        .match-modal-content {
+            background: #1a1a2e; border: 1px solid rgba(0,255,136,0.2); border-radius: 20px;
+            padding: 24px 20px; width: 94%; max-width: 480px; max-height: 92vh;
+            overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .match-modal-title { color: #00ff88; text-align: center; margin: 0 0 6px 0; font-size: 1.3em; letter-spacing: 1px; }
+        .mode-switcher { display: flex; background: rgba(255,255,255,0.05); border-radius: 30px; padding: 4px; margin: 0 auto 20px auto; width: fit-content; gap: 4px; }
+        .mode-btn { padding: 7px 22px; border-radius: 24px; border: none; background: transparent; color: #777; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 0.95em; }
+        .mode-btn.active { background: linear-gradient(45deg, #00ff88, #00cc6a); color: #000; box-shadow: 0 2px 10px rgba(0,255,136,0.4); }
+        .teams-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: start; margin-bottom: 18px; }
+        .vs-badge { display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1em; color: #555; padding-top: 28px; }
+        .team-col { display: flex; flex-direction: column; gap: 8px; }
+        .team-label { text-align: center; font-size: 0.72em; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 2px; }
+        .team-a .team-label { color: #00aaff; } .team-b .team-label { color: #ff6644; }
+        .player-select-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; cursor: pointer; transition: all 0.2s; text-align: center; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9em; color: #666; }
+        .player-select-box.filled { color: #fff; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+        .player-select-box.team-a.filled { border-color: rgba(0,170,255,0.4); }
+        .player-select-box.team-b.filled { border-color: rgba(255,102,68,0.4); }
+        .player-select-box:hover { background: rgba(255,255,255,0.1); }
+        .player-select-box img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .psb-clear { margin-left: auto; background: none; border: none; color: #ff4444; cursor: pointer; font-size: 1em; padding: 0 2px; line-height: 1; }
+        .player-picker { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e1e30; border: 1px solid rgba(0,255,136,0.3); border-radius: 16px; padding: 16px; z-index: 9999; width: 88%; max-width: 320px; box-shadow: 0 16px 48px rgba(0,0,0,0.9); max-height: 70vh; overflow-y: auto; }
+        .player-picker.open { display: block; }
+        .picker-title { color: #00ff88; font-weight: bold; margin: 0 0 12px 0; text-align: center; font-size: 1em; }
+        .picker-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; }
+        .picker-overlay.open { display: block; }
+        .picker-player-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; }
+        .picker-player-row:hover { background: rgba(255,255,255,0.08); }
+        .picker-player-row.disabled { opacity: 0.3; pointer-events: none; }
+        .picker-player-row img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #444; }
+        .picker-player-name { font-weight: bold; font-size: 0.95em; }
+        .score-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin-bottom: 20px; }
+        .score-input-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .score-input-wrap label { font-size: 0.7em; color: #666; text-transform: uppercase; letter-spacing: 0.8px; }
+        .score-input { width: 100%; text-align: center; font-size: 2em; font-weight: 900; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; color: #fff; padding: 10px 0; outline: none; box-sizing: border-box; }
+        .score-input:focus { border-color: #00ff88; }
+        .score-sep { font-size: 1.8em; font-weight: 900; color: #444; text-align: center; }
+        .btn-confirm-match { width: 100%; padding: 14px; background: linear-gradient(45deg, #00ff88, #00cc6a); color: #000; font-size: 1.05em; font-weight: 900; border: none; border-radius: 12px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; margin-bottom: 10px; }
+        .btn-confirm-match:hover { box-shadow: 0 4px 20px rgba(0,255,136,0.5); transform: translateY(-1px); }
+        .btn-confirm-match:active { transform: scale(0.98); }
+        .btn-cancel-match { width: 100%; padding: 11px; background: transparent; border: 1px solid #333; color: #888; border-radius: 12px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+        .btn-cancel-match:hover { border-color: #ff4444; color: #ff4444; }
+        .match-success { text-align: center; padding: 20px 0; display: none; }
+        .match-success .success-icon { font-size: 3em; margin-bottom: 10px; }
+        .match-success p { color: #aaa; margin: 4px 0; }
+        .match-success .result-line { color: #fff; font-weight: bold; font-size: 1.1em; margin: 8px 0; }
+
+        #turnuvaBaslik { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; max-width: 90vw !important; margin: 0 auto 20px auto !important; display: block !important; word-break: normal !important; }
+
+        @media (max-width: 480px) {
+            .pmc-header { flex-wrap: wrap !important; padding-bottom: 5px !important; }
+            .pmc-identity { flex: 1 1 60% !important; min-width: 0 !important; padding-right: 10px; }
+            .pmc-stats { width: 100% !important; justify-content: space-evenly !important; margin-top: 12px !important; padding-top: 12px !important; border-top: 1px dashed rgba(255,255,255,0.1); gap: 12px !important; }
+        }
+
+        .pmc-name { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; display: block !important; word-break: normal !important; }
+        .desktop-table td.player-name { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; word-break: normal !important; }
+        .desktop-table { table-layout: fixed; }
+        .desktop-table th:nth-child(1) { width: 12%; } .desktop-table th:nth-child(2) { width: 13%; } .desktop-table th:nth-child(3) { width: 30%; text-align: left; padding-left: 15px; } .desktop-table th:nth-child(4) { width: 15%; } .desktop-table th:nth-child(5) { width: 15%; } .desktop-table th:nth-child(6) { width: 15%; } 
+
+        .btn-back-lobby { display: inline-flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(0, 0, 0, 0.3); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; margin-bottom: 20px; }
+        .btn-back-lobby:hover { color: #00ff88; border-color: rgba(0, 255, 136, 0.3); background: rgba(0, 255, 136, 0.05); transform: translateX(-3px); }
+
+        .waiting-room-wrap {
+            background: rgba(30, 30, 30, 0.6); border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px; padding: 30px 20px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        }
+        .wr-header { color: #00ff88; font-size: 1.5em; font-weight: 900; margin-bottom: 5px; }
+        .wr-sub { color: #aaa; font-size: 0.9em; margin-bottom: 25px; }
+        
+        .wr-invite-box {
+            background: rgba(0,0,0,0.4); border: 1px dashed #555; border-radius: 12px;
+            padding: 15px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px; align-items: center;
+        }
+        .wr-invite-box span { color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; }
+        .wr-invite-code { color: #fff; font-size: 1.4em; font-weight: 900; letter-spacing: 2px; }
+        .btn-copy-link { background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; color: #00ff88; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .btn-copy-link:hover { background: #00ff88; color: #000; }
+
+        .wr-players-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; margin-bottom: 30px;
+        }
+        .wr-player-card {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.03); padding: 15px 10px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05); animation: popIn 0.4s ease forwards;
+        }
+        .wr-player-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #00ff88; }
+        .wr-player-card .wr-ph { width: 50px; height: 50px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 1.5em; border: 2px solid #555; }
+        .wr-player-name { color: #ddd; font-size: 0.85em; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        
+        .wr-start-btn { width: 100%; padding: 16px; background: linear-gradient(45deg, #00ff88, #00cc6a); color: #000; font-size: 1.1em; font-weight: 900; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; }
+        .wr-start-btn:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(0,255,136,0.4); transform: translateY(-2px); }
+        .wr-start-btn:disabled { background: #444; color: #777; cursor: not-allowed; }
+
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="/fifa_project/index.html" class="btn-back-lobby"><span class="back-icon">←</span> Lobi</a>
+
+        <h1 id="turnuvaBaslik">🏆 Yükleniyor...</h1>
+
+        <div id="waitingRoomContainer" class="waiting-room-wrap" style="display: none;">
+            <div class="wr-header">Bekleme Odası</div>
+            <div class="wr-sub" id="wrSubText">Oyuncuların katılması bekleniyor (1/8)</div>
+
+            <div class="wr-invite-box">
+                <span>Turnuva Davet Kodu</span>
+                <div class="wr-invite-code" id="wrCodeText">...</div>
+                <button class="btn-copy-link" onclick="copyInviteLink()">🔗 Linki Kopyala</button>
+            </div>
+
+            <div class="wr-players-grid" id="wrPlayersGrid">
+                </div>
+
+            <div id="wrOwnerControls" style="display: none;">
+                <button class="wr-start-btn" id="wrStartBtn" onclick="startTournament()">🚀 Turnuvayı Başlat</button>
+            </div>
+        </div>
+
+        <div id="activeTournamentContainer" style="display: none;">
+            
+            <div id="finishContainer" style="display: none; padding: 10px 0; margin-bottom: 20px;">
+                <button onclick="finishTournament()" style="width: 100%; padding: 16px; background: linear-gradient(45deg, #ffd700, #ffaa00); color: #000; font-size: 1.1em; font-weight: 900; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); text-transform: uppercase; letter-spacing: 1px;">
+                    🏁 Turnuvayı Bitir & Kupaları Dağıt
+                </button>
+            </div>
+
+            <table class="desktop-table">
+                <thead><tr><th>Sıra</th><th>Foto</th><th>Oyuncu</th><th>O</th><th>Puan</th><th>Av</th></tr></thead>
+                <tbody id="leaderboard-desktop"></tbody>
+            </table>
+            <div id="leaderboard-mobile" class="mobile-card-list"></div>
+            
+            <div class="reset-container" id="resetContainer" style="display: none;">
+                <button class="btn-reset" onclick="resetPoints()">⚠️ Puanları Sıfırla</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="mainBottomNav" style="display: flex;">
+        <div class="nav-item active"><span class="nav-icon">📋</span><span>Puan Tablosu</span></div>
+        <div class="nav-item" onclick="window.location.href='/fifa_project/istatistik.html?id='+new URLSearchParams(window.location.search).get('id')"><span class="nav-icon">📊</span><span>İstatistik</span></div>
+        <div class="nav-item" id="navMatchBtn" onclick="openMatchModal()"><span class="nav-icon">⚽</span><span>Maç Gir</span></div>
+    </div>
+
+    <div id="matchModal" class="modal">
+        <div class="match-modal-content">
+            <div id="matchForm">
+                <h2 class="match-modal-title">⚽ Maç Sonucu Gir</h2>
+                <div class="mode-switcher">
+                    <button class="mode-btn active" id="btn1v1" onclick="setMode('1v1')">1v1</button>
+                    <button class="mode-btn" id="btn2v1" onclick="setMode('2v1')">2v1</button>
+                    <button class="mode-btn" id="btn2v2" onclick="setMode('2v2')">2v2</button>
+                </div>
+                <div class="teams-row">
+                    <div class="team-col team-a"><div class="team-label">⬡ Takım A</div><div class="player-select-box team-a" id="slotA1" onclick="openPicker('A1')"><span>+ Seç</span></div><div class="player-select-box team-a" id="slotA2" onclick="openPicker('A2')" style="display:none"><span>+ Seç</span></div></div>
+                    <div class="vs-badge">VS</div>
+                    <div class="team-col team-b"><div class="team-label">⬡ Takım B</div><div class="player-select-box team-b" id="slotB1" onclick="openPicker('B1')"><span>+ Seç</span></div><div class="player-select-box team-b" id="slotB2" onclick="openPicker('B2')" style="display:none"><span>+ Seç</span></div></div>
+                </div>
+                <div class="score-row">
+                    <div class="score-input-wrap"><label>Takım A</label><input class="score-input" id="scoreA" type="number" min="0" max="99" value="0" inputmode="numeric" onfocus="this.select()"></div>
+                    <div class="score-sep">–</div>
+                    <div class="score-input-wrap"><label>Takım B</label><input class="score-input" id="scoreB" type="number" min="0" max="99" value="0" inputmode="numeric" onfocus="this.select()"></div>
+                </div>
+                <button class="btn-confirm-match" onclick="confirmMatch()">✅ Maç Sonucunu Kaydet</button>
+                <button class="btn-cancel-match" onclick="closeMatchModal()">İptal</button>
+            </div>
+            <div id="matchSuccess" class="match-success"><div class="success-icon">🏆</div><p>Maç kaydedildi!</p><button class="btn-confirm-match" style="margin-top:16px;" onclick="closeMatchModal()">Tamam</button></div>
+        </div>
+    </div>
+
+    <div class="picker-overlay" id="pickerOverlay" onclick="closePicker()"></div>
+    <div class="player-picker" id="playerPicker"><p class="picker-title" id="pickerTitle">Oyuncu Seç</p><div id="pickerList"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, update, push, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXfQzf_zNClZHzSClAVIFY4Jozlx44yV0",
+            authDomain: "football-tournament-web-app.firebaseapp.com",
+            databaseURL: "https://football-tournament-web-app-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "football-tournament-web-app",
+            storageBucket: "football-tournament-web-app.firebasestorage.app",
+            messagingSenderId: "381451877946",
+            appId: "1:381451877946:web:d3cc57357ae68c5bc63f03"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db  = getDatabase(app);
+        const auth = getAuth(app);
+
+        const params    = new URLSearchParams(window.location.search);
+        const turnuvaId = params.get('id');
+        // Tam Yol Güncellemesi
+        if (!turnuvaId) window.location.href = '/fifa_project/index.html';
+
+        const turnuvaRef   = ref(db, `turnuvalar/${turnuvaId}`);
+        const oyuncularRef = ref(db, `turnuvalar/${turnuvaId}/oyuncular`);
+        const metaRef      = ref(db, `turnuvalar/${turnuvaId}/meta`);
+        const maclarRef    = ref(db, `turnuvalar/${turnuvaId}/maclar`);
+        const havuzRef     = ref(db, 'oyuncu_havuzu');
+
+        let players    = [];
+        let playerPool = {};
+        
+        let currentUserUid = null;
+        let isAuthorized = false;
+        let isDataLoaded = false;
+        let isOwner = false; 
+        let isAdmin = false; 
+
+        window.Toast = Swal.mixin({ toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, background: '#1e1e2e', color: '#fff' });
+        const fetchWithTimeout = (promise, ms = 6000) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))]);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                // Tam Yol Güncellemesi
+                window.location.href = `/fifa_project/login.html?returnTo=${encodeURIComponent(window.location.href)}`;
+            } else {
+                currentUserUid = user.uid;
+                try {
+                    const [adminSnap1, adminSnap2] = await fetchWithTimeout(Promise.all([get(ref(db, 'Admins')), get(ref(db, 'admins'))]), 6000);
+                    const adminsData = { ...(adminSnap1.val() || {}), ...(adminSnap2.val() || {}) };
+                    isAdmin = false;
+                    Object.keys(adminsData).forEach(k => { if (k.trim() === currentUserUid) isAdmin = true; });
+                    loadData();
+                } catch (e) { document.getElementById("turnuvaBaslik").innerHTML = "<span style='color:#ff4444;'>Bağlantı Hatası! Yenileyin.</span>"; }
+            }
+        });
+
+        async function loadData() {
+            try {
+                const poolSnap = await fetchWithTimeout(get(havuzRef), 6000);
+                playerPool = poolSnap.val() || {};
+
+                onValue(turnuvaRef, (snapshot) => {
+                    isDataLoaded = true;
+                    const data = snapshot.val();
+                    if (data) {
+                        players = data.oyuncular || [];
+                        const meta = data.meta || {};
+                        isOwner = (meta.ownerUid === currentUserUid);
+                        isAuthorized = isOwner || isAdmin || players.some(p => p.uid === currentUserUid);
+                        
+                        document.body.classList.toggle('spectator-mode', !isAuthorized);
+                        
+                        // Başlığa Turnuva Bitti bilgisini yazdır
+                        if(meta.status === 'bitti') {
+                            document.getElementById("turnuvaBaslik").innerText = "🏁 Turnuva Sona Erdi: " + (meta.isim || "");
+                        } else {
+                            document.getElementById("turnuvaBaslik").innerText = "🏆 " + (meta.isim || "Turnuva") + (isAdmin ? " (👑 Admin)" : "");
+                        }
+
+                        players = players.map(p => {
+                            const match = Object.values(playerPool).find(pp => pp.name === p.name);
+                            return { ...p, image: match ? match.image : "" };
+                        });
+
+                        const status = meta.status || 'basladi'; 
+                        const cap = meta.kapasite || 8;
+
+                        if (status === 'bekliyor') {
+                            document.getElementById('waitingRoomContainer').style.display = 'block';
+                            document.getElementById('activeTournamentContainer').style.display = 'none';
+                            document.getElementById('mainBottomNav').style.display = 'none';
+
+                            document.getElementById('wrCodeText').innerText = turnuvaId;
+                            document.getElementById('wrSubText').innerText = `Oyuncuların katılması bekleniyor (${players.length}/${cap})`;
+
+                            const grid = document.getElementById('wrPlayersGrid');
+                            grid.innerHTML = '';
+                            players.forEach(p => {
+                                const img = p.image ? `<img src="${p.image}">` : `<div class="wr-ph">👤</div>`;
+                                grid.innerHTML += `<div class="wr-player-card">${img}<span class="wr-player-name">${p.name}</span></div>`;
+                            });
+
+                            const controls = document.getElementById('wrOwnerControls');
+                            if (isOwner || isAdmin) {
+                                controls.style.display = 'block';
+                                const startBtn = document.getElementById('wrStartBtn');
+                                if (players.length >= 2) {
+                                    startBtn.disabled = false;
+                                    startBtn.innerText = "🚀 Turnuvayı Başlat";
+                                } else {
+                                    startBtn.disabled = true;
+                                    startBtn.innerText = "En az 2 oyuncu bekleniyor...";
+                                }
+                            } else {
+                                controls.style.display = 'none';
+                            }
+
+                        } else if (status === 'bitti') {
+                            // 🔥 YENİ: BİTMİŞ TURNUVA MODU
+                            document.getElementById('waitingRoomContainer').style.display = 'none';
+                            document.getElementById('activeTournamentContainer').style.display = 'block';
+                            document.getElementById('mainBottomNav').style.display = 'flex';
+                            
+                            // Maç girmeyi, bitirmeyi ve sıfırlamayı engelle
+                            document.getElementById('navMatchBtn').style.display = 'none';
+                            const resetContainer = document.getElementById('resetContainer');
+                            if (resetContainer) resetContainer.style.display = 'none';
+                            const finishContainer = document.getElementById('finishContainer');
+                            if (finishContainer) finishContainer.style.display = 'none';
+
+                            renderAll();
+                        } else {
+                            // AKTİF MOD
+                            document.getElementById('waitingRoomContainer').style.display = 'none';
+                            document.getElementById('activeTournamentContainer').style.display = 'block';
+                            document.getElementById('mainBottomNav').style.display = 'flex';
+                            
+                            const resetContainer = document.getElementById('resetContainer');
+                            if (resetContainer) resetContainer.style.display = (isOwner || isAdmin) ? 'block' : 'none';
+                            
+                            // 🔥 YENİ: Sadece kurucuya Turnuvayı Bitir butonunu göster
+                            const finishContainer = document.getElementById('finishContainer');
+                            if (finishContainer) finishContainer.style.display = (isOwner || isAdmin) ? 'block' : 'none';
+
+                            renderAll();
+                        }
+                    } else {
+                        // Tam Yol Güncellemesi
+                        alert("Turnuva bulunamadı veya silinmiş."); window.location.href = "/fifa_project/index.html";
+                    }
+                });
+            } catch (error) { document.getElementById("turnuvaBaslik").innerHTML = "<span style='color:#ff4444;'>Sunucuya Bağlanılamadı!</span>"; }
+        }
+
+        window.copyInviteLink = function() {
+            // Tam Yol ile Davet Linki Üretme
+            const baseUrl = window.location.origin + '/fifa_project/katil.html?kod=';
+            const inviteLink = baseUrl + turnuvaId;
+            
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                Toast.fire({ icon: 'success', title: 'Davet Linki Kopyalandı!' });
+            }).catch(err => {
+                navigator.clipboard.writeText(turnuvaId);
+                Toast.fire({ icon: 'info', title: 'Oda Kodu Kopyalandı!' });
+            });
+        };
+
+        window.startTournament = function() {
+            if (!isOwner && !isAdmin) return;
+            Swal.fire({
+                title: 'Turnuvayı Başlat', text: 'Başladıktan sonra yeni oyuncu katılamaz. Emin misin?',
+                icon: 'question', showCancelButton: true, confirmButtonColor: '#00ff88', cancelButtonColor: '#555',
+                confirmButtonText: 'Evet, Başlat!', cancelButtonText: 'İptal', background: '#1e1e2e', color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    update(metaRef, { status: 'basladi', lastUpdated: Date.now() });
+                    Toast.fire({ icon: 'success', title: 'Turnuva Başladı!' });
+                }
+            });
+        };
+
+        // 🔥 YENİ EFSANEVİ ALGORİTMA: Turnuvayı Bitir ve Kupa Ver
+        window.finishTournament = async function() {
+            if (!isOwner && !isAdmin) return Toast.fire({ icon: 'error', title: 'Sadece kurucu bitirebilir!' });
+            
+            if (players.length < 3) {
+                return Swal.fire({ icon: 'warning', title: 'Yetersiz Oyuncu', text: 'Kupa dağıtmak için turnuvada en az 3 kişi olmalı.', background: '#1e1e2e', color: '#fff', confirmButtonColor: '#00ff88' });
+            }
+
+            Swal.fire({
+                title: 'Turnuvayı Bitir?',
+                html: 'Turnuva sona erecek ve ilk 3 oyuncunun profiline <b>Kupa ve Madalyalar</b> eklenecek. Bu işlem geri alınamaz!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffd700',
+                cancelButtonColor: '#555',
+                confirmButtonText: 'Evet, Bitir & Dağıt!',
+                cancelButtonText: 'İptal',
+                background: '#1e1e2e',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        // 1. Oyuncuları puan ve averaja göre sırala
+                        const sortedPlayers = getSorted();
+                        const first = sortedPlayers[0];
+                        const second = sortedPlayers[1];
+                        const third = sortedPlayers[2];
+
+                        // 2. Profillere Kupa Yazdırma Fonksiyonu
+                        const updatePlayerTrophy = async (uid, trophyType) => {
+                            if(!uid) return;
+                            const pRef = ref(db, `oyuncu_havuzu/${uid}`);
+                            const snap = await get(pRef);
+                            if(snap.exists()){
+                                const playerData = snap.val();
+                                let kupalar = playerData.kupalar || { altin: 0, gumus: 0, bronz: 0 };
+                                kupalar[trophyType] = (kupalar[trophyType] || 0) + 1;
+                                await update(pRef, { kupalar: kupalar });
+                            }
+                        };
+
+                        // 3. Eşzamanlı olarak 3 oyuncunun profiline kupaları yaz
+                        await Promise.all([
+                            updatePlayerTrophy(first.uid, 'altin'),
+                            updatePlayerTrophy(second.uid, 'gumus'),
+                            updatePlayerTrophy(third.uid, 'bronz')
+                        ]);
+
+                        // 4. Turnuva statüsünü "bitti" olarak işaretle
+                        await update(metaRef, { status: 'bitti', lastUpdated: Date.now() });
+
+                        // 5. Görkemli Kutlama Ekranı
+                        Swal.fire({
+                            title: '🏆 Turnuva Bitti!',
+                            html: `<br><b>🥇 Şampiyon:</b> ${first.name}<br><b>🥈 İkinci:</b> ${second.name}<br><b>🥉 Üçüncü:</b> ${third.name}<br><br><span style="color:#00ff88;">Kupalar profillere başarıyla eklendi!</span>`,
+                            icon: 'success',
+                            confirmButtonColor: '#00ff88',
+                            background: '#1e1e2e',
+                            color: '#fff'
+                        });
+
+                    } catch (error) {
+                        console.error("Kupa Dağıtım Hatası:", error);
+                        Toast.fire({ icon: 'error', title: 'Bir hata oluştu!' });
+                    }
+                }
+            });
+        };
+
+        // --- RENDER VE MAÇ FONKSİYONLARI ---
+        function getSorted() { return [...players].sort((a, b) => b.points - a.points || b.gd - a.gd); }
+        function renderAll() { renderDesktop(); renderMobile(); }
+
+        function renderDesktop() {
+            const tbody = document.getElementById("leaderboard-desktop"); tbody.innerHTML = "";
+            getSorted().forEach((p, i) => {
+                const gdColor = p.gd >= 0 ? '#3498db' : '#ff4444', gdText = (p.gd > 0 ? '+' : '') + p.gd;
+                tbody.innerHTML += `<tr style="animation-delay:${i*0.05}s"><td>${i+1}</td><td>${p.image ? `<img src="${p.image}" class="player-avatar">` : '👤'}</td><td class="player-name">${p.name}</td><td>${p.played}</td><td style="color:#00ff88;font-weight:bold;font-size:1.2em;">${p.points}</td><td style="color:${gdColor};font-weight:bold;">${gdText}</td></tr>`;
+            });
+        }
+        function renderMobile() {
+            const list = document.getElementById("leaderboard-mobile"); list.innerHTML = "";
+            getSorted().forEach((p, i) => {
+                const gdColor = p.gd >= 0 ? '#3498db' : '#ff4444', gdText = (p.gd > 0 ? '+' : '') + p.gd;
+                const rank = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+                list.innerHTML += `<div class="player-mobile-card" style="animation-delay:${i*0.07}s"><div class="pmc-header" style="border-bottom:none;padding-bottom:0;"><span class="pmc-rank">${rank}</span><div class="pmc-identity">${p.image ? `<img src="${p.image}" class="pmc-avatar">` : `<div class="pmc-avatar-placeholder">👤</div>`}<span class="pmc-name">${p.name}</span></div><div class="pmc-stats"><div class="pmc-stat"><span class="pmc-stat-val" style="color:#00ff88;">${p.points}</span><span class="pmc-stat-lbl">Puan</span></div><div class="pmc-stat"><span class="pmc-stat-val">${p.played}</span><span class="pmc-stat-lbl">Maç</span></div><div class="pmc-stat"><span class="pmc-stat-val" style="color:${gdColor};">${gdText}</span><span class="pmc-stat-lbl">Averaj</span></div></div></div></div>`;
+            });
+        }
+
+        window.resetPoints = function() {
+            if (!isDataLoaded) return Toast.fire({ icon: 'info', title: 'Yükleniyor...' });
+            if (!isOwner && !isAdmin) return Toast.fire({ icon: 'error', title: 'Yetkiniz yok!' });
+            Swal.fire({ title: 'Emin misin?', text: 'Puanlar sıfırlanacak!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff4444', cancelButtonColor: '#555', confirmButtonText: 'Evet', cancelButtonText: 'İptal', background: '#1e1e2e', color: '#fff' }).then((r) => {
+                if (r.isConfirmed) { set(oyuncularRef, players.map(p => ({ ...p, points: 0, gd: 0, played: 0 }))); Toast.fire({ icon: 'success', title: 'Sıfırlandı!' }); }
+            });
+        };
+
+        window.openMatchModal = function() { if (!isAuthorized) return Toast.fire({ icon: 'error', title: 'İzleyiciler giremez.' }); resetMatchForm(); document.getElementById('matchModal').style.display = 'flex'; document.getElementById('matchForm').style.display = 'block'; document.getElementById('matchSuccess').style.display = 'none'; };
+        let matchMode = '1v1', activeSlot = null, selections = { A1: null, A2: null, B1: null, B2: null };
+        window.closeMatchModal = function() { document.getElementById('matchModal').style.display = 'none'; closePicker(); };
+        function resetMatchForm() { selections = { A1: null, A2: null, B1: null, B2: null }; document.getElementById('scoreA').value = 0; document.getElementById('scoreB').value = 0; setMode('1v1'); ['A1','A2','B1','B2'].forEach(renderSlot); }
+        window.setMode = function(mode) { matchMode = mode; document.getElementById('btn1v1').classList.toggle('active', mode === '1v1'); document.getElementById('btn2v1').classList.toggle('active', mode === '2v1'); document.getElementById('btn2v2').classList.toggle('active', mode === '2v2'); const slotA2 = document.getElementById('slotA2'), slotB2 = document.getElementById('slotB2'); if (mode === '2v2') { slotA2.style.display = 'flex'; slotB2.style.display = 'flex'; } else if (mode === '2v1') { slotA2.style.display = 'flex'; slotB2.style.display = 'none'; selections.B2 = null; renderSlot('B2'); } else { slotA2.style.display = 'none'; slotB2.style.display = 'none'; selections.A2 = null; selections.B2 = null; renderSlot('A2'); renderSlot('B2'); } };
+        function renderSlot(slotId) { const el = document.getElementById('slot' + slotId), p = selections[slotId]; if (p) { el.innerHTML = `${p.image ? `<img src="${p.image}">` : '👤'}<span>${p.name}</span><button class="psb-clear" onclick="clearSlot('${slotId}', event)">✕</button>`; el.classList.add('filled'); } else { el.innerHTML = `<span>+ Oyuncu Seç</span>`; el.classList.remove('filled'); } }
+        window.clearSlot = function(slotId, event) { event.stopPropagation(); selections[slotId] = null; renderSlot(slotId); };
+        window.openPicker = function(slotId) { activeSlot = slotId; document.getElementById('pickerTitle').textContent = `${slotId.startsWith('A') ? 'Takım A' : 'Takım B'} – Oyuncu Seç`; const taken = Object.values(selections).filter(Boolean).map(p => p.id), list = document.getElementById('pickerList'); list.innerHTML = ''; if (players.length === 0) list.innerHTML = '<p style="color:#888;text-align:center;">Oyuncu yok.</p>'; else players.forEach(p => { const isTaken = taken.includes(p.id), img = p.image ? `<img src="${p.image}">` : `<div style="width:34px;height:34px;background:#333;border-radius:50%;display:flex;align-items:center;justify-content:center;">👤</div>`; const row = document.createElement('div'); row.className = 'picker-player-row' + (isTaken ? ' disabled' : ''); row.innerHTML = `${img}<span class="picker-player-name">${p.name}</span>`; if (!isTaken) row.onclick = () => selectPlayer(p); list.appendChild(row); }); document.getElementById('playerPicker').classList.add('open'); document.getElementById('pickerOverlay').classList.add('open'); };
+        window.closePicker = function() { document.getElementById('playerPicker').classList.remove('open'); document.getElementById('pickerOverlay').classList.remove('open'); activeSlot = null; };
+        function selectPlayer(player) { if (!activeSlot) return; selections[activeSlot] = player; renderSlot(activeSlot); closePicker(); }
+
+        window.confirmMatch = async function() {
+            if (!isAuthorized) return; const sA = parseInt(document.getElementById('scoreA').value, 10), sB = parseInt(document.getElementById('scoreB').value, 10);
+            if (isNaN(sA) || isNaN(sB) || sA < 0 || sB < 0) return Toast.fire({ icon: 'error', title: 'Geçersiz skor.' }); if (sA > 20 || sB > 20) return Toast.fire({ icon: 'warning', title: "Skor çok yüksek." });
+            let needed = matchMode === '2v2' ? ['A1','A2','B1','B2'] : matchMode === '2v1' ? ['A1','A2','B1'] : ['A1','B1']; for (const slot of needed) if (!selections[slot]) return Toast.fire({ icon: 'warning', title: `Oyuncu eksik!` });
+            const ids = needed.map(s => selections[s].id); if (new Set(ids).size !== ids.length) return Toast.fire({ icon: 'error', title: 'Aynı oyuncu seçilemez!' });
+            if (sA === 0 && sB === 0) { const res = await Swal.fire({ title: 'Emin misin?', text: '0-0 kaydedilecek.', icon: 'question', showCancelButton: true, background: '#1e1e2e', color: '#fff' }); if (!res.isConfirmed) return; }
+
+            let teamA = matchMode === '2v2' || matchMode === '2v1' ? [selections.A1, selections.A2] : [selections.A1]; let teamB = matchMode === '2v2' ? [selections.B1, selections.B2] : [selections.B1];
+            const gdA = sA - sB, gdB = sB - sA; let pointsA = sA > sB ? 3 : sA < sB ? 0 : 1, pointsB = sA < sB ? 3 : sA > sB ? 0 : 1;
+            function applyToTeam(team, points, gd) { team.forEach(player => { const i = players.findIndex(p => p.id === player.id); if (i !== -1) { players[i].points = Math.max(0, players[i].points + points); players[i].gd += gd; players[i].played += 1; } }); }
+            applyToTeam(teamA, pointsA, gdA); applyToTeam(teamB, pointsB, gdB);
+
+            set(oyuncularRef, players); update(metaRef, { lastUpdated: Date.now() });
+            let ekleyenKisi = playerPool[currentUserUid] ? playerPool[currentUserUid].name : (isAdmin ? "Admin" : "Bilinmiyor");
+            push(maclarRef, { tarih: Date.now(), mod: matchMode, ekleyen: ekleyenKisi, takimA: { oyuncular: teamA.map(p => p.name), skor: sA, puan: pointsA }, takimB: { oyuncular: teamB.map(p => p.name), skor: sB, puan: pointsB }, sonuc: sA > sB ? 'A' : sB > sA ? 'B' : 'X' });
+
+            document.getElementById('matchForm').style.display = 'none'; document.getElementById('matchSuccess').style.display = 'block'; Toast.fire({ icon: 'success', title: 'Maç kaydedildi!' });
+        };
+    </script>
+</body>
+</html>
