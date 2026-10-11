@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İstatistikler | FIFA 2v2</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/fifa_project/style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
@@ -241,7 +241,7 @@
 <body>
 
     <div class="container">
-        <a href="/index.html" class="btn-back-lobby">
+        <a href="/fifa_project/index.html" class="btn-back-lobby">
             <span class="back-icon">←</span> Lobi
         </a>
 
@@ -310,7 +310,7 @@
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item" onclick="window.location.href='/turnuva.html?id='+new URLSearchParams(window.location.search).get('id')">
+        <div class="nav-item" onclick="window.location.href='/fifa_project/turnuva.html?id='+new URLSearchParams(window.location.search).get('id')">
             <span class="nav-icon">📋</span><span>Puan Tablosu</span>
         </div>
         <div class="nav-item active">
@@ -393,7 +393,7 @@
 
         const params    = new URLSearchParams(window.location.search);
         const turnuvaId = params.get('id');
-        if (!turnuvaId) window.location.href = '/index.html';
+        if (!turnuvaId) window.location.href = '/fifa_project/index.html';
 
         const turnuvaRef   = ref(db, `turnuvalar/${turnuvaId}`);
         const maclarRef    = ref(db, `turnuvalar/${turnuvaId}/maclar`);
@@ -426,7 +426,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 const currentUrl = encodeURIComponent(window.location.href);
-                window.location.href = "/login.html?returnTo=" + currentUrl;
+                window.location.href = "/fifa_project/login.html?returnTo=" + currentUrl;
             } else {
                 currentUserUid = user.uid;
                 try {
@@ -479,7 +479,7 @@
                         renderLeaders(); renderMatches(); 
                     } else {
                         alert("Turnuva bulunamadı.");
-                        window.location.href = "/index.html";
+                        window.location.href = "/fifa_project/index.html";
                     }
                 }, (error) => {
                     document.getElementById("turnuvaBaslik").innerHTML = "<span style='color:#ff4444;'>Veri Akışı Kesildi</span>";

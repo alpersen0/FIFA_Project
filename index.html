@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIFA Turnuva Lobisi</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/fifa_project/style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -176,7 +176,7 @@
             <button class="btn-create-t" onclick="createTournament()">+ Yeni Turnuva</button>
             <button class="btn-join-t" onclick="joinWithCode()">🔑 Kod ile Katıl</button>
         </div>
-        <button id="btnAdminPanel" style="display: none; width: 100%; margin-bottom: 25px; padding: 16px; background: linear-gradient(145deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid rgba(255, 170, 0, 0.4); border-bottom: 2px solid #ffaa00; color: #ffaa00; font-size: 1.1em; font-weight: 900; border-radius: 14px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;" onclick="window.location.href='/oyuncular.html'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 25px rgba(0,0,0,0.6), 0 0 20px rgba(255, 170, 0, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15)';">
+        <button id="btnAdminPanel" style="display: none; width: 100%; margin-bottom: 25px; padding: 16px; background: linear-gradient(145deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid rgba(255, 170, 0, 0.4); border-bottom: 2px solid #ffaa00; color: #ffaa00; font-size: 1.1em; font-weight: 900; border-radius: 14px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;" onclick="window.location.href='/fifa_project/oyuncular.html'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 25px rgba(0,0,0,0.6), 0 0 20px rgba(255, 170, 0, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 170, 0, 0.15)';">
             👑 Tüm Oyuncuları Yönet (Admin)
         </button>
 
@@ -211,10 +211,10 @@
     </div>
 
     <div class="bottom-nav" id="mainBottomNav" style="display: flex;">
-        <div class="nav-item active" onclick="window.location.href='/index.html'">
+        <div class="nav-item active" onclick="window.location.href='/fifa_project/index.html'">
             <span class="nav-icon">🏆</span><span>Turnuvalar</span>
         </div>
-        <div class="nav-item" onclick="window.location.href='/profil.html'">
+        <div class="nav-item" onclick="window.location.href='/fifa_project/profil.html'">
             <span class="nav-icon">👤</span><span>Profilim</span>
         </div>
     </div>
@@ -260,16 +260,16 @@
         };
 
         window.logout = function() {
-            signOut(auth).then(() => window.location.href = "/login.html").catch(err => {
+            signOut(auth).then(() => window.location.href = "/fifa_project/login.html").catch(err => {
                 // Eğer Firebase'den çıkış yapılamazsa bile tarayıcıyı zorla Login'e at (Kullanıcıyı rehin bırakma)
-                window.location.href = "/login.html";
+                window.location.href = "/fifa_project/login.html";
             });
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 const currentUrl = encodeURIComponent(window.location.href);
-                window.location.href = "/login.html?returnTo=" + currentUrl;
+                window.location.href = "/fifa_project/login.html?returnTo=" + currentUrl;
             } else {
                 currentUserUid = user.uid;
                 
@@ -379,7 +379,7 @@
                         
                         card.onclick = (e) => {
                             if (e.target.closest('.btn-delete-t')) return;
-                            window.location.href = `/turnuva.html?id=${tData.id}`;
+                            window.location.href = `/fifa_project/turnuva.html?id=${tData.id}`;
                         };
 
                         const title = document.createElement("h2");
@@ -510,7 +510,7 @@
                         return; // İşlemi durdur
                     }
 
-                    window.location.href = `/katil.html?kod=${kod}`;
+                    window.location.href = `/fifa_project/katil.html?kod=${kod}`;
                 }
             });
         };
@@ -568,7 +568,7 @@
                     oyuncular: kurucuData
                 });
                 
-                window.location.href = `/turnuva.html?id=${id}`;
+                window.location.href = `/fifa_project/turnuva.html?id=${id}`;
             } catch (error) {
                 console.error("Turnuva Kayıt Hatası:", error);
                 Toast.fire({ icon: 'error', title: 'Bağlantı hatası! Turnuva oluşturulamadı.' });

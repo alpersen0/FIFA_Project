@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turnuvaya Katıl | FIFA Ligi</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/fifa_project/style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -103,7 +103,7 @@
         </div>
 
         <button class="btn-join" id="joinBtn" onclick="joinTournament()">Katıl</button>
-        <button class="btn-cancel" onclick="window.location.href='/index.html'">İptal Et ve Lobiye Dön</button>
+        <button class="btn-cancel" onclick="window.location.href='/fifa_project/index.html'">İptal Et ve Lobiye Dön</button>
     </div>
 
     <script type="module">
@@ -153,7 +153,7 @@
             if (!user) {
                 // Giriş yapmamışsa URL hafızasıyla login'e yolla
                 const currentUrl = encodeURIComponent(window.location.href);
-                window.location.href = `/login.html?returnTo=${currentUrl}`;
+                window.location.href = `/fifa_project/login.html?returnTo=${currentUrl}`;
                 return;
             }
 
@@ -167,7 +167,7 @@
                 if (!userSnap.exists() || !userSnap.val().name) {
                     // İsmi yoksa Profile zorunlu yönlendir (URL hafızasıyla)
                     const currentUrl = encodeURIComponent(window.location.href);
-                    window.location.href = `/profil.html?returnTo=${currentUrl}`;
+                    window.location.href = `/fifa_project/profil.html?returnTo=${currentUrl}`;
                     return;
                 }
 
@@ -197,7 +197,7 @@
                 // Zaten içeride mi?
                 const isAlreadyIn = players.some(p => p.uid === currentUserUid);
                 if (isAlreadyIn) {
-                    window.location.href = `/turnuva.html?id=${inviteCode}`;
+                    window.location.href = `/fifa_project/turnuva.html?id=${inviteCode}`;
                     return;
                 }
 
@@ -271,7 +271,7 @@
                 
                 // 1 saniye sonra turnuvanın içine (bekleme odasına) yolla
                 setTimeout(() => {
-                    window.location.href = `/turnuva.html?id=${inviteCode}`;
+                    window.location.href = `/fifa_project/turnuva.html?id=${inviteCode}`;
                 }, 1000);
 
             } catch (error) {
@@ -289,8 +289,8 @@
                 confirmButtonText: 'Lobiye Dön', confirmButtonColor: '#ff4444',
                 background: '#1e1e2e', color: '#fff', allowOutsideClick: false
             }).then(() => {
-                // Sadece /index.html yerine gizli parametre ile yolluyoruz
-                window.location.href = '/index.html?action=join';
+                // Sadece /fifa_project/index.html yerine gizli parametre ile yolluyoruz
+                window.location.href = '/fifa_project/index.html?action=join';
             });
         }
     </script>
