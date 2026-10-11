@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turnuva | FIFA 2v2</title>
-    <link rel="stylesheet" href="/fifa_project/style.css">
+    <link rel="stylesheet" href="/style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -118,7 +118,7 @@
 <body>
 
     <div class="container">
-        <a href="/fifa_project/index.html" class="btn-back-lobby"><span class="back-icon">←</span> Lobi</a>
+        <a href="/index.html" class="btn-back-lobby"><span class="back-icon">←</span> Lobi</a>
 
         <h1 id="turnuvaBaslik">🏆 Yükleniyor...</h1>
 
@@ -162,7 +162,7 @@
 
     <div class="bottom-nav" id="mainBottomNav" style="display: flex;">
         <div class="nav-item active"><span class="nav-icon">📋</span><span>Puan Tablosu</span></div>
-        <div class="nav-item" onclick="window.location.href='/fifa_project/istatistik.html?id='+new URLSearchParams(window.location.search).get('id')"><span class="nav-icon">📊</span><span>İstatistik</span></div>
+        <div class="nav-item" onclick="window.location.href='/istatistik.html?id='+new URLSearchParams(window.location.search).get('id')"><span class="nav-icon">📊</span><span>İstatistik</span></div>
         <div class="nav-item" id="navMatchBtn" onclick="openMatchModal()"><span class="nav-icon">⚽</span><span>Maç Gir</span></div>
     </div>
 
@@ -217,7 +217,7 @@
         const params    = new URLSearchParams(window.location.search);
         const turnuvaId = params.get('id');
         // Tam Yol Güncellemesi
-        if (!turnuvaId) window.location.href = '/fifa_project/index.html';
+        if (!turnuvaId) window.location.href = '/index.html';
 
         const turnuvaRef   = ref(db, `turnuvalar/${turnuvaId}`);
         const oyuncularRef = ref(db, `turnuvalar/${turnuvaId}/oyuncular`);
@@ -240,7 +240,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 // Tam Yol Güncellemesi
-                window.location.href = `/fifa_project/login.html?returnTo=${encodeURIComponent(window.location.href)}`;
+                window.location.href = `/login.html?returnTo=${encodeURIComponent(window.location.href)}`;
             } else {
                 currentUserUid = user.uid;
                 try {
@@ -345,7 +345,7 @@
                         }
                     } else {
                         // Tam Yol Güncellemesi
-                        alert("Turnuva bulunamadı veya silinmiş."); window.location.href = "/fifa_project/index.html";
+                        alert("Turnuva bulunamadı veya silinmiş."); window.location.href = "/index.html";
                     }
                 });
             } catch (error) { document.getElementById("turnuvaBaslik").innerHTML = "<span style='color:#ff4444;'>Sunucuya Bağlanılamadı!</span>"; }
@@ -353,7 +353,7 @@
 
         window.copyInviteLink = function() {
             // Tam Yol ile Davet Linki Üretme
-            const baseUrl = window.location.origin + '/fifa_project/katil.html?kod=';
+            const baseUrl = window.location.origin + '/katil.html?kod=';
             const inviteLink = baseUrl + turnuvaId;
             
             navigator.clipboard.writeText(inviteLink).then(() => {

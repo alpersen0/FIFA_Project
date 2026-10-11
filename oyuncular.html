@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Paneli | FIFA Turnuva</title>
-    <link rel="stylesheet" href="/fifa_project/style.css">
+    <link rel="stylesheet" href="/style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .swal2-container { z-index: 99999 !important; }
@@ -37,7 +37,7 @@
 <body>
 
     <div class="admin-container">
-        <a href="/fifa_project/index.html" class="btn-back-lobby" style="margin-bottom: 20px;">
+        <a href="/index.html" class="btn-back-lobby" style="margin-bottom: 20px;">
             <span class="back-icon">←</span> Lobiye Dön
         </a>
 
@@ -86,7 +86,7 @@
         });
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) return window.location.href = "/fifa_project/login.html";
+            if (!user) return window.location.href = "/login.html";
 
             try {
                 // Admin yetki kontrolü
@@ -97,7 +97,7 @@
 
                 if (!isAdmin) {
                     alert("Bu sayfaya giriş yetkiniz yok!");
-                    window.location.href = "/fifa_project/index.html";
+                    window.location.href = "/index.html";
                     return;
                 }
 
