@@ -26,6 +26,21 @@
             backdrop-filter: blur(10px);
             /* margin: 60px auto; satırını SİLDİK çünkü artık body onu ortalıyor */
         }
+
+        /* 🔥 YENİ: Logo Stilleri */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px; /* Yazı ile arasındaki boşluk */
+        }
+
+        .logo-container img {
+            width: 90px; /* Logonun büyüklüğünü buradan ayarlayabilirsin */
+            height: auto;
+            /* İsteğe bağlı: Eğer logo karanlıkta kayboluyorsa veya yeşil temaya uydurmak istersen hafif bir parlama efekti ekleyebiliriz */
+            filter: drop-shadow(0 4px 10px rgba(0, 255, 136, 0.3));
+        }
+
         .auth-title {
             font-size: 1.8em;
             font-weight: bold;
@@ -161,6 +176,13 @@
 <body>
 
     <div class="auth-container">
+
+        <!-- 🔥 YENİ EKLENEN LOGO KISMI -->
+        <div class="logo-container">
+            <!-- src kısmına logonun tam dosya yolunu veya linkini yazmalısın -->
+            <img src="ea_fc_logo.png" alt="FC Logo">
+        </div>
+
         <div class="auth-title" id="pageTitle">Giriş Yap</div>
         
         <div id="authError" class="error-msg"></div>
